@@ -58,15 +58,17 @@ Tendências de Agressividade: ${formData.home_aggression_trend}% (C) / ${formDat
 Over Rate (Últimos Jogos): ${formData.last3_over_rate}% (Geral) / ${formData.last5_referee_over_rate}% (Árbitro)
 Odds da Linha 4.5: Over ${formData.odds_over} / Under ${formData.odds_under}
 
-[2] RESULTADO DA PREVISÃO HÍBRIDA
+[2] CONSENSUS ENGINE & DECISION LAYER
 ----------------------------------------
+Decision Layer: ${log.decision_layer || 'N/A'}
+Consistency Score: ${log.consistency_score ? log.consistency_score.toFixed(1) : 'N/A'}/100
 Previsão Sugerida (Linha Principal): ${result.prediction.replace('OVER', 'MAIS DE').replace('UNDER', 'MENOS DE')}
 Confiança Calibrada: ${result.confidence.toFixed(1)}%
 Risk Score: ${result.risk_score ? result.risk_score.toFixed(1) : '0.0'}
 Cartões Esperados Exatos (XGBRegressor): ${result.expected_cards}
 
-Probabilidade MAIS DE (Over 4.5): ${result.over_probability.toFixed(1)}% | EV: ${result.ev_over ? result.ev_over.toFixed(2) : 'N/A'}
-Probabilidade MENOS DE (Under 4.5): ${result.under_probability.toFixed(1)}% | EV: ${result.ev_under ? result.ev_under.toFixed(2) : 'N/A'}
+Probabilidade MAIS DE (Over 4.5): ${result.over_probability?.toFixed(1)}% | EV: ${result.ev_over ? result.ev_over.toFixed(2) : 'N/A'}
+Probabilidade MENOS DE (Under 4.5): ${result.under_probability?.toFixed(1)}% | EV: ${result.ev_under ? result.ev_under.toFixed(2) : 'N/A'}
 Edge Score: ${result.edge_score ? result.edge_score.toFixed(1) : 'N/A'}
 Classificação de Valor: ${result.value_label || 'N/A'}
 
@@ -80,11 +82,13 @@ ${result.inconsistency_alert ? `\n[!] ALERTA DE CONSISTÊNCIA MATEMÁTICA:\n${re
 Recomendação da IA:
 ${result.explanation}
 
-[4] LOGS INTERNOS DO MOTOR
+[4] LOGS INTERNOS DO MOTOR DE CONSENSO
 ----------------------------------------
 Arquitetura do Modelo: ${log.model_type}
 Impacto Numérico do Árbitro Calculado: ${log.referee_impact?.toFixed(2) || 'N/A'}
-Edge Score Bruto: ${log.edge_score?.toFixed(2) || 'N/A'}
+Classifier Over Prob: ${log.clf_over?.toFixed(1)}%
+Poisson Over Prob: ${log.poisson_over?.toFixed(1)}%
+Regressor Over (Sigmoid): ${log.reg_over?.toFixed(1)}%
 
 [Fim do Relatório Gerado por Card Pro]
 `;
