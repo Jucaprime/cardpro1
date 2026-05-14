@@ -68,12 +68,12 @@ def predict(req: PredictRequest):
         (home_team, away_team, home_cards_avg, away_cards_avg, referee_avg, 
          last3_over_rate, last5_referee_over_rate, home_aggression_trend, away_aggression_trend,
          odds_over, odds_under, prediction, confidence, under_prob, over_prob)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
     ''', (req.home_team, req.away_team, req.home_cards_avg, req.away_cards_avg, req.referee_avg, 
           req.last3_over_rate, req.last5_referee_over_rate, req.home_aggression_trend, req.away_aggression_trend,
           req.odds_over, req.odds_under, 
           result["prediction"], result["confidence"], result["under_prob"], result["over_prob"]))
-    pred_id = cursor.lastrowid
+    pred_id = cursor.fetchone()['id']
     conn.commit()
     conn.close()
     
@@ -101,10 +101,10 @@ def feedback(req: FeedbackRequest):
     cursor = conn.cursor()
     
     # Insert feedback
-    cursor.execute("INSERT INTO feedbacks (prediction_id, is_correct, actual_cards) VALUES (?, ?, ?)", (req.prediction_id, req.is_correct, req.actual_cards))
+    cursor.execute("INSERT INTO feedbacks (prediction_id, is_correct, actual_cards) VALUES (%s, %s, %s)", (req.prediction_id, req.is_correct, req.actual_cards))
     
     # Retrieve prediction details to add to training data
-    cursor.execute("SELECT * FROM predictions WHERE id = ?", (req.prediction_id,))
+    cursor.execute("SELECT * FROM predictions WHERE id = %s", (req.prediction_id,))
     pred = cursor.fetchone()
     
     if pred:
@@ -121,7 +121,7 @@ def feedback(req: FeedbackRequest):
             (home_team, away_team, home_cards_avg, away_cards_avg, referee_avg, 
              last3_over_rate, last5_referee_over_rate, home_aggression_trend, away_aggression_trend,
              odds_over, odds_under, result_is_over, actual_cards)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (pred.get("home_team", "Casa"), pred.get("away_team", "Fora"), pred["home_cards_avg"], pred["away_cards_avg"], pred["referee_avg"], 
               pred.get("last3_over_rate", 50.0), pred.get("last5_referee_over_rate", 50.0), pred.get("home_aggression_trend", 50.0), pred.get("away_aggression_trend", 50.0),
               pred["odds_over"], pred["odds_under"], result_is_over, req.actual_cards))

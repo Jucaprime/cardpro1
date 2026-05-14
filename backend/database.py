@@ -1,21 +1,32 @@
-import sqlite3
 import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
 
-DB_PATH = "cardedge.db"
+# Carrega variáveis do arquivo .env (se existir)
+load_dotenv()
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
+    if not DATABASE_URL:
+        raise ValueError("ERRO CRÍTICO: DATABASE_URL não definida no arquivo .env. Crie uma conta no Supabase e configure a URL.")
+        
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     return conn
 
 def init_db():
+    if not DATABASE_URL:
+        print("Aviso: DATABASE_URL não definida, o banco PostgreSQL não será inicializado.")
+        return
+        
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Predictions table
+    # Predictions table (PostgreSQL usa SERIAL em vez de AUTOINCREMENT)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS predictions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             home_team TEXT DEFAULT 'Casa',
             away_team TEXT DEFAULT 'Fora',
             home_cards_avg REAL,
@@ -38,9 +49,10 @@ def init_db():
     # Feedbacks table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS feedbacks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             prediction_id INTEGER,
             is_correct BOOLEAN,
+            actual_cards REAL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(prediction_id) REFERENCES predictions(id)
         )
@@ -49,7 +61,7 @@ def init_db():
     # Training Data table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS training_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             home_team TEXT DEFAULT 'Casa',
             away_team TEXT DEFAULT 'Fora',
             home_cards_avg REAL,
@@ -68,40 +80,9 @@ def init_db():
     ''')
     
     conn.commit()
-    
-    # Simple migration: Add home_team and away_team if they do not exist
-    try:
-        cursor.execute("ALTER TABLE predictions ADD COLUMN home_team TEXT DEFAULT 'Casa'")
-        cursor.execute("ALTER TABLE predictions ADD COLUMN away_team TEXT DEFAULT 'Fora'")
-    except sqlite3.OperationalError:
-        pass # Columns already exist
-
-    try:
-        cursor.execute("ALTER TABLE predictions ADD COLUMN last3_over_rate REAL DEFAULT 50.0")
-        cursor.execute("ALTER TABLE predictions ADD COLUMN last5_referee_over_rate REAL DEFAULT 50.0")
-        cursor.execute("ALTER TABLE predictions ADD COLUMN home_aggression_trend REAL DEFAULT 50.0")
-        cursor.execute("ALTER TABLE predictions ADD COLUMN away_aggression_trend REAL DEFAULT 50.0")
-    except sqlite3.OperationalError:
-        pass
-
-    try:
-        cursor.execute("ALTER TABLE training_data ADD COLUMN last3_over_rate REAL DEFAULT 50.0")
-        cursor.execute("ALTER TABLE training_data ADD COLUMN last5_referee_over_rate REAL DEFAULT 50.0")
-        cursor.execute("ALTER TABLE training_data ADD COLUMN home_aggression_trend REAL DEFAULT 50.0")
-        cursor.execute("ALTER TABLE training_data ADD COLUMN away_aggression_trend REAL DEFAULT 50.0")
-        cursor.execute("ALTER TABLE training_data ADD COLUMN actual_cards REAL")
-    except sqlite3.OperationalError:
-        pass
-
-    try:
-        cursor.execute("ALTER TABLE feedbacks ADD COLUMN actual_cards REAL")
-    except sqlite3.OperationalError:
-        pass
-
-    conn.commit()
     conn.close()
 
-if not os.path.exists(DB_PATH):
+try:
     init_db()
-else:
-    init_db() # Run init_db anyway to trigger the migration step
+except Exception as e:
+    print(f"Erro ao conectar/inicializar banco Supabase: {e}")

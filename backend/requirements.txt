@@ -6,3 +6,5 @@ pydantic
 joblib
 xgboost
 lightgbm
+psycopg2-binary
+python-dotenv

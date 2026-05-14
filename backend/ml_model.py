@@ -10,8 +10,13 @@ from xgboost import XGBClassifier, XGBRegressor
 from lightgbm import LGBMClassifier
 from database import get_db_connection
 
-MODEL_PATH = "models/cards_classifier.pkl"
-REGRESSOR_PATH = "models/cards_regressor.pkl"
+DATA_DIR = os.environ.get("DATA_DIR", ".")
+MODEL_DIR = os.path.join(DATA_DIR, "models")
+if not os.path.exists(MODEL_DIR):
+    os.makedirs(MODEL_DIR, exist_ok=True)
+
+MODEL_PATH = os.path.join(MODEL_DIR, "cards_classifier.pkl")
+REGRESSOR_PATH = os.path.join(MODEL_DIR, "cards_regressor.pkl")
 
 def initialize_mock_data():
     conn = get_db_connection()
@@ -34,7 +39,7 @@ def initialize_mock_data():
         cursor.executemany('''
             INSERT INTO training_data 
             (home_cards_avg, away_cards_avg, referee_avg, last3_over_rate, last5_referee_over_rate, home_aggression_trend, away_aggression_trend, odds_over, odds_under, result_is_over, actual_cards)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', mock_data)
         conn.commit()
     conn.close()
