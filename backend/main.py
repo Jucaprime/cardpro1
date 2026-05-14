@@ -100,6 +100,12 @@ def feedback(req: FeedbackRequest):
     conn = database.get_db_connection()
     cursor = conn.cursor()
     
+    # Check if feedback already exists
+    cursor.execute("SELECT id FROM feedbacks WHERE prediction_id = %s", (req.prediction_id,))
+    if cursor.fetchone():
+        conn.close()
+        return {"status": "error", "message": "Feedback já enviado para esta partida."}
+        
     # Insert feedback
     cursor.execute("INSERT INTO feedbacks (prediction_id, is_correct, actual_cards) VALUES (%s, %s, %s)", (req.prediction_id, req.is_correct, req.actual_cards))
     
@@ -141,9 +147,9 @@ def get_history():
     conn = database.get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT p.*, f.is_correct 
+        SELECT p.*, 
+               (SELECT is_correct FROM feedbacks f WHERE f.prediction_id = p.id ORDER BY id DESC LIMIT 1) as is_correct
         FROM predictions p 
-        LEFT JOIN feedbacks f ON p.id = f.prediction_id
         ORDER BY p.id DESC LIMIT 50
     ''')
     rows = cursor.fetchall()
