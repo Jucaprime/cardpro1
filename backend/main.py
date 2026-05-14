@@ -167,7 +167,7 @@ def get_stats():
     cursor.execute("SELECT COUNT(*) as total FROM training_data")
     total_trained = cursor.fetchone()["total"]
     
-    cursor.execute("SELECT COUNT(*) as total FROM feedbacks WHERE is_correct = 1")
+    cursor.execute("SELECT COUNT(*) as total FROM feedbacks WHERE is_correct = TRUE")
     correct_preds = cursor.fetchone()["total"]
     
     cursor.execute("SELECT COUNT(*) as total FROM feedbacks")
