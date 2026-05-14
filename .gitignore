@@ -1,0 +1,16 @@
+# Node / React
+node_modules/
+dist/
+.env
+
+# Python / Backend
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+cardedge.db
+
+# OS Files
+.DS_Store
+Thumbs.db
