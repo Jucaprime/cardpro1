@@ -167,7 +167,14 @@ def get_stats():
     cursor.execute("SELECT COUNT(*) as total FROM training_data")
     total_trained = cursor.fetchone()["total"]
     
-    cursor.execute("SELECT COUNT(*) as total FROM feedbacks WHERE is_correct = TRUE")
+    cursor.execute('''
+        SELECT COUNT(*) as total 
+        FROM feedbacks f
+        JOIN predictions p ON f.prediction_id = p.id
+        WHERE f.is_correct = TRUE 
+           OR (f.actual_cards > 4.5 AND p.prediction = 'OVER')
+           OR (f.actual_cards <= 4.5 AND p.prediction = 'UNDER')
+    ''')
     correct_preds = cursor.fetchone()["total"]
     
     cursor.execute("SELECT COUNT(*) as total FROM feedbacks")
