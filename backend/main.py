@@ -147,9 +147,13 @@ def get_history():
     conn = database.get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT p.*, 
-               (SELECT is_correct FROM feedbacks f WHERE f.prediction_id = p.id ORDER BY id DESC LIMIT 1) as is_correct
+        SELECT p.*, f.is_correct, f.actual_cards
         FROM predictions p 
+        LEFT JOIN (
+            SELECT DISTINCT ON (prediction_id) prediction_id, is_correct, actual_cards 
+            FROM feedbacks 
+            ORDER BY prediction_id, id DESC
+        ) f ON p.id = f.prediction_id
         ORDER BY p.id DESC LIMIT 50
     ''')
     rows = cursor.fetchall()
